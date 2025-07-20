@@ -18,4 +18,10 @@ public interface HolidayV1ApiSpec {
             description = "연도별·국가별 공휴일을 조회합니다."
     )
     ApiResponse<HolidayV1Dto.SearchResponse> searchHolidays(String countryCode, int year, int page, int size, String sort);
+
+    @Operation(
+            summary = "재동기화",
+            description = "특정 연도 및 국가 데이터를 재호출하여 덮어씌웁니다."
+    )
+    ApiResponse<HolidayV1Dto.RefreshResponse> refreshHolidays(int year, String countryCode);
 }

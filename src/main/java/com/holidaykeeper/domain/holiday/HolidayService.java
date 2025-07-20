@@ -21,10 +21,18 @@ public class HolidayService {
 
     @Transactional(readOnly = true)
     public Page<HolidayInfo> findHolidays(HolidayCommand.Search command) {
-        Page<Holiday> holidays = holidayRepository.findByCountryCodeAndYear(command.countryCode(), command.year(),
+        Page<Holiday> holidays = holidayRepository.findPage(command.countryCode(), command.year(),
                 command.page(), command.size(), command.holidaySort());
 
         return holidays.map(holiday -> new HolidayInfo(holiday.getDate(), holiday.getLocalName(), holiday.getName(),
                 holiday.getCountryCode()));
+    }
+
+    @Transactional(readOnly = true)
+    public List<HolidayInfo> findHolidays(HolidayCommand.Find command) {
+        return holidayRepository.findByCountryCodeAndYear(command.countryCode(), command.year()).stream()
+                .map(holiday -> new HolidayInfo(holiday.getDate(), holiday.getLocalName(), holiday.getName(),
+                        holiday.getCountryCode()))
+                .toList();
     }
 }

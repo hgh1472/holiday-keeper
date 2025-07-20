@@ -1,6 +1,6 @@
 package com.holidaykeeper.application.holiday;
 
-public record HolidayResult(
+public record LoadResult(
         String countryCode,
         int holidayCount
 ) {

@@ -23,4 +23,10 @@ public class HolidayCommand {
             DATE_DESC
         }
     }
+
+    public record Find(
+            String countryCode,
+            int year
+    ) {
+    }
 }

@@ -36,10 +36,15 @@ public class HolidayRepositoryImpl implements HolidayRepository {
     }
 
     @Override
-    public Page<Holiday> findByCountryCodeAndYear(String countryCode, int year, int page, int size,
-                                                  HolidaySort holidaySort) {
+    public Page<Holiday> findPage(String countryCode, int year, int page, int size,
+                                  HolidaySort holidaySort) {
         Sort sort = Sort.by(holidaySort == HolidaySort.DATE_ASC ? Sort.Direction.ASC : Sort.Direction.DESC, "date");
 
         return holidayJpaRepository.findByCountryCodeAndYear(countryCode, year, PageRequest.of(page, size, sort));
+    }
+
+    @Override
+    public List<Holiday> findByCountryCodeAndYear(String countryCode, int year) {
+        return holidayJpaRepository.findByCountryCodeAndYear(countryCode, year);
     }
 }

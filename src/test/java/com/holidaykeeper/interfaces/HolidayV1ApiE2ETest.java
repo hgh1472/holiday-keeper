@@ -1,13 +1,16 @@
 package com.holidaykeeper.interfaces;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.holidaykeeper.domain.holiday.Holiday;
 import com.holidaykeeper.domain.holiday.HolidayClient;
 import com.holidaykeeper.domain.holiday.HolidayCommand;
 import com.holidaykeeper.domain.holiday.HolidayInfo;
 import com.holidaykeeper.domain.holiday.HolidayService;
+import com.holidaykeeper.infrastructure.holiday.HolidayJpaRepository;
 import com.holidaykeeper.interfaces.holiday.HolidayV1Dto;
 import com.holidaykeeper.utils.DatabaseCleanUp;
 import java.time.LocalDate;
@@ -40,6 +43,9 @@ public class HolidayV1ApiE2ETest {
 
     @Autowired
     private HolidayService holidayService;
+
+    @Autowired
+    private HolidayJpaRepository holidayJpaRepository;
 
 
     @AfterEach
@@ -232,6 +238,77 @@ public class HolidayV1ApiE2ETest {
                         assertThat(dates).isEqualTo(sortedDates);
                     }
             );
+        }
+
+        @Nested
+        @DisplayName("PATCH /api/v1/holidays/{year}/{countryCode}")
+        class Refresh {
+            @DisplayName("특정 연도 및 국가 데이터가 없는 경우, 데이터가 저장된다.")
+            @Test
+            void refreshHolidays_withEmptyHolidays() {
+                ParameterizedTypeReference<ApiResponse<HolidayV1Dto.RefreshResponse>> responseType = new ParameterizedTypeReference<>() {
+                };
+                String url = REQUEST_URL + "/2025/KR";
+                ResponseEntity<ApiResponse<HolidayV1Dto.RefreshResponse>> response =
+                        testRestTemplate.exchange(url, HttpMethod.PATCH, new HttpEntity<>(null), responseType);
+
+                List<HolidayInfo> holidays = holidayClient.findHolidays("KR", 2025);
+                assertAll(
+                        () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                        () -> assertThat(response.getBody().data().countryCode()).isEqualTo("KR"),
+                        () -> assertThat(response.getBody().data().year()).isEqualTo(2025),
+                        () -> assertThat(response.getBody().data().refreshedCount()).isEqualTo(holidays.size())
+                );
+            }
+
+            @DisplayName("특정 연도 및 국가의 공휴일 데이터가 일부분 존재하는 경우, 데이터를 덮어쓴다.")
+            @Test
+            void refreshHolidays_withExistHolidays() {
+                HolidayInfo info = holidayClient.findHolidays("KR", 2025).get(0);
+                holidayJpaRepository.save(new Holiday(info.date(), info.localName(), info.name(), info.countryCode()));
+
+                ParameterizedTypeReference<ApiResponse<HolidayV1Dto.RefreshResponse>> responseType = new ParameterizedTypeReference<>() {
+                };
+                String url = REQUEST_URL + "/2025/KR";
+                ResponseEntity<ApiResponse<HolidayV1Dto.RefreshResponse>> response =
+                        testRestTemplate.exchange(url, HttpMethod.PATCH, new HttpEntity<>(null), responseType);
+
+                List<HolidayInfo> holidays = holidayClient.findHolidays("KR", 2025);
+                assertAll(
+                        () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                        () -> assertThat(response.getBody().data().countryCode()).isEqualTo("KR"),
+                        () -> assertThat(response.getBody().data().year()).isEqualTo(2025),
+                        () -> assertThat(response.getBody().data().refreshedCount()).isEqualTo(holidays.size()-1)
+                );
+            }
+
+            @DisplayName("국가 코드가 잘못된 경우, 조회에 실패한다.")
+            @Test
+            void refreshHolidays_whenNonExistCountryCode() {
+                ParameterizedTypeReference<ApiResponse<HolidayV1Dto.RefreshResponse>> responseType = new ParameterizedTypeReference<>() {
+                };
+                String url = REQUEST_URL + "/2025/NON_EXIST";
+                ResponseEntity<ApiResponse<HolidayV1Dto.RefreshResponse>> response =
+                        testRestTemplate.exchange(url, HttpMethod.PATCH, new HttpEntity<>(null), responseType);
+
+                assertAll(
+                        () -> assertTrue(response.getStatusCode().is4xxClientError())
+                );
+            }
+
+            @DisplayName("공휴일 정보가 제공되지 않는 연도의 경우, 조회에 실패한다.")
+            @Test
+            void refreshHolidays_whenInvalidYear() {
+                ParameterizedTypeReference<ApiResponse<HolidayV1Dto.RefreshResponse>> responseType = new ParameterizedTypeReference<>() {
+                };
+                String url = REQUEST_URL + "/10000/KR";
+                ResponseEntity<ApiResponse<HolidayV1Dto.RefreshResponse>> response =
+                        testRestTemplate.exchange(url, HttpMethod.PATCH, new HttpEntity<>(null), responseType);
+
+                assertAll(
+                        () -> assertTrue(response.getStatusCode().is4xxClientError())
+                );
+            }
         }
     }
 }

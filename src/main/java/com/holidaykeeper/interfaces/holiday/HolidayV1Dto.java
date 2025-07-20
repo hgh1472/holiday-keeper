@@ -30,4 +30,12 @@ public class HolidayV1Dto {
             int totalPages
     ) {
     }
+
+    public record RefreshResponse(
+            String countryCode,
+            int year,
+            int refreshedCount,
+            List<HolidayResponse> refreshedHolidays
+    ) {
+    }
 }
