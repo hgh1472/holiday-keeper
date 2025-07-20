@@ -12,7 +12,10 @@ import com.holidaykeeper.support.error.CoreException;
 import com.holidaykeeper.support.error.ErrorType;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,12 +26,10 @@ public class HolidayFacade {
     public static final int START_YEAR = 2020;
     public static final int LAST_YEAR = 2025;
 
+    private final ExecutorService executorService;
     private final CountryClient countryClient;
-
     private final HolidayClient holidayClient;
-
     private final CountryService countryService;
-
     private final HolidayService holidayService;
 
     public List<LoadResult> loadHolidays() {
@@ -74,21 +75,35 @@ public class HolidayFacade {
     }
 
     private List<LoadResult> loadHolidaysOf(List<CountryInfo> countries, int startYear, int lastYear) {
-        List<LoadResult> loadResults = new ArrayList<>();
-        List<HolidayInfo> totalHolidays = new ArrayList<>();
+        List<CompletableFuture<LoadResult>> futures = new ArrayList<>();
+        List<HolidayInfo> findHolidays = Collections.synchronizedList(new ArrayList<>());
+
         for (CountryInfo country : countries) {
-            int countryHolidayCount = 0;
-            for (int year = startYear; year <= lastYear; year++) {
-                List<HolidayInfo> countryHolidays = holidayClient.findHolidays(country.countryCode(), year);
-                countryHolidayCount += countryHolidays.size();
-                totalHolidays.addAll(countryHolidays);
-            }
-            loadResults.add(new LoadResult(country.countryCode(), countryHolidayCount));
+            CompletableFuture<LoadResult> future = CompletableFuture.supplyAsync(
+                    () -> findHolidaysOf(startYear, lastYear, country, findHolidays), executorService);
+            futures.add(future);
         }
-        holidayService.saveHolidays(totalHolidays.stream()
+
+        List<LoadResult> loadResults = futures.stream()
+                .map(CompletableFuture::join)
+                .toList();
+
+        holidayService.saveHolidays(findHolidays.stream()
                 .map(holiday -> new HolidayCommand.Create(holiday.date(), holiday.localName(), holiday.name(),
                         holiday.countryCode()))
                 .toList());
+
         return loadResults;
+    }
+
+    private LoadResult findHolidaysOf(int startYear, int lastYear, CountryInfo country,
+                                      List<HolidayInfo> totalHolidays) {
+        List<HolidayInfo> countryHolidays = new ArrayList<>();
+        for (int year = startYear; year <= lastYear; year++) {
+            List<HolidayInfo> holidays = holidayClient.findHolidays(country.countryCode(), year);
+            countryHolidays.addAll(holidays);
+        }
+        totalHolidays.addAll(countryHolidays);
+        return new LoadResult(country.countryCode(), countryHolidays.size());
     }
 }
