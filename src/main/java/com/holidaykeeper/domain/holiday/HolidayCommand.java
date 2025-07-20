@@ -29,4 +29,10 @@ public class HolidayCommand {
             int year
     ) {
     }
+
+    public record Delete(
+            String countryCode,
+            int year
+    ) {
+    }
 }

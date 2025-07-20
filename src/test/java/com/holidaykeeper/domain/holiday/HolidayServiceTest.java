@@ -64,14 +64,15 @@ class HolidayServiceTest {
     @DisplayName("특정 연도 및 국가의 공휴일 레코드를 삭제한다.")
     @Test
     void deleteHolidays() {
-        when(holidayRepository.deleteHolidays("KR", 2025)).thenReturn(2);
+        HolidayCommand.Delete command = new HolidayCommand.Delete("KR", 2025);
+        when(holidayRepository.deleteHolidays(command.countryCode(), command.year())).thenReturn(2);
 
-        DeleteInfo deleteInfo = holidayService.deleteHolidays("KR", 2025);
+        DeleteInfo deleteInfo = holidayService.deleteHolidays(command);
 
-        verify(holidayRepository, times(1)).deleteHolidays("KR", 2025);
+        verify(holidayRepository, times(1)).deleteHolidays(command.countryCode(), command.year());
         assertAll(
-                () -> assertThat(deleteInfo.countryCode()).isEqualTo("KR"),
-                () -> assertThat(deleteInfo.year()).isEqualTo(2025),
+                () -> assertThat(deleteInfo.countryCode()).isEqualTo(command.countryCode()),
+                () -> assertThat(deleteInfo.year()).isEqualTo(command.year()),
                 () -> assertThat(deleteInfo.deletedCount()).isEqualTo(2)
         );
     }

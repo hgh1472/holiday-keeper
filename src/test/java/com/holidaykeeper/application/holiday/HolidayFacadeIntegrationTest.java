@@ -102,9 +102,10 @@ class HolidayFacadeIntegrationTest {
         @DisplayName("특정 국가 및 연도의 공휴일 데이터 없는 경우, 해당 공휴일 데이터들이 저장된다.")
         @Test
         void upsert_whenNonExistHolidays() {
-            List<Holiday> before = holidayRepository.findByCountryCodeAndYear("KR", 2025);
+            HolidayCriteria.Upsert criteria = new HolidayCriteria.Upsert("KR", 2025);
+            List<Holiday> before = holidayRepository.findByCountryCodeAndYear(criteria.countryCode(), criteria.year());
 
-            List<HolidayInfo> holidayInfos = holidayFacade.upsert("KR", 2025);
+            List<HolidayInfo> holidayInfos = holidayFacade.upsert(criteria);
 
             List<HolidayInfo> holidays = holidayClient.findHolidays("KR", 2025);
             assertAll(
@@ -116,11 +117,12 @@ class HolidayFacadeIntegrationTest {
         @DisplayName("특정 국가 및 연도의 공휴일 데이터 없는 경우, 해당 공휴일 데이터들이 저장된다.")
         @Test
         void upsert_whenExistHolidays() {
-            holidayRepository.save(new Holiday(LocalDate.of(2025, 1, 1), "새해", "New Year`s Day", "KR"));
+            HolidayCriteria.Upsert criteria = new HolidayCriteria.Upsert("KR", 2025);
+            holidayRepository.save(new Holiday(LocalDate.of(criteria.year(), 1, 1), "새해", "New Year`s Day", criteria.countryCode()));
 
-            List<HolidayInfo> upsertedHolidays = holidayFacade.upsert("KR", 2025);
+            List<HolidayInfo> upsertedHolidays = holidayFacade.upsert(criteria);
 
-            List<HolidayInfo> holidays = holidayClient.findHolidays("KR", 2025);
+            List<HolidayInfo> holidays = holidayClient.findHolidays(criteria.countryCode(), criteria.year());
             assertAll(
                     () -> assertThat(upsertedHolidays).hasSize(holidays.size() - 1)
             );
@@ -129,7 +131,9 @@ class HolidayFacadeIntegrationTest {
         @DisplayName("존재하지 않는 국가 코드일경우, CoreException을 발생시킨다.")
         @Test
         void throwCoreException_whenNonExistCountryCode() {
-            assertThatThrownBy(() -> holidayFacade.upsert("NON_EXIST", 2025))
+            HolidayCriteria.Upsert criteria = new HolidayCriteria.Upsert("NON_EXIST", 2025);
+
+            assertThatThrownBy(() -> holidayFacade.upsert(criteria))
                     .isInstanceOf(CoreException.class)
                     .hasMessage("존재하지 않는 국가 코드이거나, 해당 연도의 공휴일이 없습니다.");
         }
@@ -137,7 +141,9 @@ class HolidayFacadeIntegrationTest {
         @DisplayName("해당 연도의 공휴일을 찾을 수 없는 경우, CoreException을 발생시킨다.")
         @Test
         void throwCoreException_whenInvalidYear() {
-            assertThatThrownBy(() -> holidayFacade.upsert("KR", 10000))
+            HolidayCriteria.Upsert criteria = new HolidayCriteria.Upsert("KR", 10000);
+
+            assertThatThrownBy(() -> holidayFacade.upsert(criteria))
                     .isInstanceOf(CoreException.class)
                     .hasMessage("존재하지 않는 국가 코드이거나, 해당 연도의 공휴일이 없습니다.");
         }

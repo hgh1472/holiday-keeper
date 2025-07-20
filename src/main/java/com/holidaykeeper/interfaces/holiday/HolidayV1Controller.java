@@ -1,10 +1,10 @@
 package com.holidaykeeper.interfaces.holiday;
 
+import com.holidaykeeper.application.holiday.HolidayCriteria;
 import com.holidaykeeper.application.holiday.HolidayFacade;
 import com.holidaykeeper.application.holiday.LoadResult;
 import com.holidaykeeper.domain.holiday.DeleteInfo;
-import com.holidaykeeper.domain.holiday.HolidayClient;
-import com.holidaykeeper.domain.holiday.HolidayCommand.Search;
+import com.holidaykeeper.domain.holiday.HolidayCommand;
 import com.holidaykeeper.domain.holiday.HolidayCommand.Search.HolidaySort;
 import com.holidaykeeper.domain.holiday.HolidayInfo;
 import com.holidaykeeper.domain.holiday.HolidayService;
@@ -47,7 +47,7 @@ public class HolidayV1Controller implements HolidayV1ApiSpec {
                                                                    @RequestParam(defaultValue = "10") int size,
                                                                    @RequestParam(defaultValue = "DATE_ASC") String sort) {
         Page<HolidayInfo> infos = holidayService.findHolidays(
-                new Search(countryCode, year, page, size, HolidaySort.valueOf(sort)));
+                new HolidayCommand.Search(countryCode, year, page, size, HolidaySort.valueOf(sort)));
 
         HolidayV1Dto.SearchResponse searchResponse = new HolidayV1Dto.SearchResponse(
                 "KR",
@@ -64,7 +64,7 @@ public class HolidayV1Controller implements HolidayV1ApiSpec {
     @Override
     @PatchMapping("/{year}/{countryCode}")
     public ApiResponse<HolidayV1Dto.RefreshResponse> refreshHolidays(@PathVariable int year, @PathVariable String countryCode) {
-        List<HolidayInfo> holidays = holidayFacade.upsert(countryCode, year);
+        List<HolidayInfo> holidays = holidayFacade.upsert(new HolidayCriteria.Upsert(countryCode, year));
 
         return ApiResponse.success(new HolidayV1Dto.RefreshResponse(countryCode, year, holidays.size(),
                 holidays.stream()
@@ -75,7 +75,7 @@ public class HolidayV1Controller implements HolidayV1ApiSpec {
     @Override
     @DeleteMapping("/{year}/{countryCode}")
     public ApiResponse<HolidayV1Dto.DeleteResponse> deleteHolidays(@PathVariable int year, @PathVariable String countryCode) {
-        DeleteInfo deleteInfo = holidayService.deleteHolidays(countryCode, year);
+        DeleteInfo deleteInfo = holidayService.deleteHolidays(new HolidayCommand.Delete(countryCode, year));
         return ApiResponse.success(new DeleteResponse(deleteInfo.countryCode(), deleteInfo.year(), deleteInfo.deletedCount()));
     }
 

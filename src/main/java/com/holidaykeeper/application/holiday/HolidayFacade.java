@@ -40,12 +40,12 @@ public class HolidayFacade {
         return loadHolidaysOf(countries);
     }
 
-    public List<HolidayInfo> upsert(String countryCode, int year) {
-        List<HolidayInfo> findHolidays = holidayClient.findHolidays(countryCode, year);
+    public List<HolidayInfo> upsert(HolidayCriteria.Upsert criteria) {
+        List<HolidayInfo> findHolidays = holidayClient.findHolidays(criteria.countryCode(),criteria.year());
         if (findHolidays.isEmpty()) {
             throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 국가 코드이거나, 해당 연도의 공휴일이 없습니다.");
         }
-        List<HolidayInfo> existHolidays = holidayService.findHolidays(new HolidayCommand.Find(countryCode, year));
+        List<HolidayInfo> existHolidays = holidayService.findHolidays(criteria.toFindCommand());
 
         List<HolidayCommand.Create> commands = findHolidays.stream()
                 .filter(findHoliday -> !existHolidays.contains(findHoliday))

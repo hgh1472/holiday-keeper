@@ -74,8 +74,9 @@ public class HolidayServiceIntegrationTest {
         void deleteHolidays() {
             holidayJpaRepository.save(new Holiday(LocalDate.of(2025, 1, 1), "새해", "New Year's Day", "KR"));
             holidayJpaRepository.save(new Holiday(LocalDate.of(2025, 12, 25), "성탄절", "Christmas", "KR"));
+            HolidayCommand.Delete command = new HolidayCommand.Delete("KR", 2025);
 
-            DeleteInfo deleteInfo = holidayService.deleteHolidays("KR", 2025);
+            DeleteInfo deleteInfo = holidayService.deleteHolidays(command);
 
             assertAll(
                     () -> assertThat(deleteInfo.countryCode()).isEqualTo("KR"),
