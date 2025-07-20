@@ -1,7 +1,11 @@
 package com.holidaykeeper.domain.holiday;
 
+import com.holidaykeeper.domain.holiday.HolidayCommand.Search.HolidaySort;
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface HolidayRepository {
     void saveAll(List<Holiday> holidays);
+
+    Page<Holiday> findByCountryCodeAndYear(String countryCode, int year, int page, int size, HolidaySort holidaySort);
 }

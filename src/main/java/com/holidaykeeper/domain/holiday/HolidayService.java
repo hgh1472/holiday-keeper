@@ -2,6 +2,7 @@ package com.holidaykeeper.domain.holiday;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,5 +17,14 @@ public class HolidayService {
                 .map(command -> Holiday.of(command.date(), command.localName(), command.name(), command.countryCode()))
                 .toList();
         holidayRepository.saveAll(holidays);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<HolidayInfo> findHolidays(HolidayCommand.Search command) {
+        Page<Holiday> holidays = holidayRepository.findByCountryCodeAndYear(command.countryCode(), command.year(),
+                command.page(), command.size(), command.holidaySort());
+
+        return holidays.map(holiday -> new HolidayInfo(holiday.getDate(), holiday.getLocalName(), holiday.getName(),
+                holiday.getCountryCode()));
     }
 }

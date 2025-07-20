@@ -10,4 +10,17 @@ public class HolidayCommand {
             String countryCode
     ) {
     }
+
+    public record Search(
+            String countryCode,
+            int year,
+            int page,
+            int size,
+            HolidaySort holidaySort
+    ) {
+        public enum HolidaySort {
+            DATE_ASC,
+            DATE_DESC
+        }
+    }
 }
