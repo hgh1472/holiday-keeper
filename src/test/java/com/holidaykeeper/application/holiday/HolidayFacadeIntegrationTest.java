@@ -115,7 +115,7 @@ class HolidayFacadeIntegrationTest {
             );
         }
 
-        @DisplayName("특정 국가 및 연도의 공휴일 데이터 없는 경우, 해당 공휴일 데이터들이 저장된다.")
+        @DisplayName("특정 국가 및 연도의 공휴일 데이터 일부 있는 경우, 이미 존재하는 데이터를 제외하고 저장된다.")
         @Test
         void upsert_whenExistHolidays() {
             HolidayCriteria.Upsert criteria = new HolidayCriteria.Upsert("KR", 2025);
