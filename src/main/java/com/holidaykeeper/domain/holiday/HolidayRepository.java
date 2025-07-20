@@ -12,4 +12,6 @@ public interface HolidayRepository {
     List<Holiday> findByCountryCodeAndYear(String countryCode, int year);
 
     int deleteHolidays(String countryCode, int year);
+
+    void deleteHolidays(int year);
 }

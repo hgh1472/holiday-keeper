@@ -18,6 +18,7 @@ import com.holidaykeeper.support.error.CoreException;
 import com.holidaykeeper.utils.DatabaseCleanUp;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -118,7 +119,8 @@ class HolidayFacadeIntegrationTest {
         @Test
         void upsert_whenExistHolidays() {
             HolidayCriteria.Upsert criteria = new HolidayCriteria.Upsert("KR", 2025);
-            holidayRepository.save(new Holiday(LocalDate.of(criteria.year(), 1, 1), "새해", "New Year`s Day", criteria.countryCode()));
+            holidayRepository.save(
+                    new Holiday(LocalDate.of(criteria.year(), 1, 1), "새해", "New Year`s Day", criteria.countryCode()));
 
             List<HolidayInfo> upsertedHolidays = holidayFacade.upsert(criteria);
 
@@ -146,6 +148,58 @@ class HolidayFacadeIntegrationTest {
             assertThatThrownBy(() -> holidayFacade.upsert(criteria))
                     .isInstanceOf(CoreException.class)
                     .hasMessage("존재하지 않는 국가 코드이거나, 해당 연도의 공휴일이 없습니다.");
+        }
+    }
+
+    @Nested
+    @DisplayName("전년도 및 금년도 공휴일 데이터 동기화 시, ")
+    class Synchronize {
+        @DisplayName("HolidayClient로 조회되지 않는 공휴일 데이터는 삭제된다.")
+        @Test
+        void synchronizeHolidays() {
+            Holiday holiday = holidayRepository.save(new Holiday(LocalDate.now(), "사라질 공휴일", "Will Be Deleted", "KR"));
+
+            holidayFacade.synchronizeHolidays();
+
+            Optional<Holiday> before = holidayRepository.findById(holiday.getId());
+            assertThat(before).isEmpty();
+        }
+
+        @DisplayName("변경되지 않은 공휴일이라도 삭제 후 다시 저장된다.")
+        @Test
+        void save_afterDelete() {
+            Holiday holiday = holidayRepository.save(
+                    new Holiday(LocalDate.of(LocalDate.now().getYear(), 1, 1), "새해", "New Year`s Day", "KR"));
+
+            holidayFacade.synchronizeHolidays();
+
+            Optional<Holiday> before = holidayRepository.findById(holiday.getId());
+            assertThat(before).isEmpty();
+            List<Holiday> savedHolidays = holidayRepository.findByCountryCodeAndYear(holiday.getCountryCode(),
+                    holiday.getDate().getYear());
+            assertThat(savedHolidays).anyMatch(
+                    savedHoliday -> savedHoliday.getDate().equals(holiday.getDate()) &&
+                            savedHoliday.getLocalName().equals(holiday.getLocalName()) &&
+                            savedHoliday.getName().equals(holiday.getName()) &&
+                            savedHoliday.getCountryCode().equals(holiday.getCountryCode())
+            );
+        }
+
+        @DisplayName("HolidayClient를 통해 조회된 공휴일이 반영된다.")
+        @Test
+        void synchronize_withHolidayClient() {
+            int thisYear = LocalDate.now().getYear();
+            List<HolidayInfo> lastYearHolidayInfo = holidayClient.findHolidays("KR", thisYear - 1);
+            List<HolidayInfo> thisYearHolidayInfo = holidayClient.findHolidays("KR", thisYear);
+
+            holidayFacade.synchronizeHolidays();
+
+            List<Holiday> lastYearHolidays = holidayRepository.findByCountryCodeAndYear("KR", thisYear - 1);
+            assertThat(lastYearHolidayInfo.size()).isEqualTo(lastYearHolidays.size());
+
+            List<Holiday> thisYearHolidays = holidayRepository.findByCountryCodeAndYear("KR", thisYear);
+            assertThat(thisYearHolidayInfo.size()).isEqualTo(thisYearHolidays.size());
+
         }
     }
 }

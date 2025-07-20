@@ -52,4 +52,9 @@ public class HolidayRepositoryImpl implements HolidayRepository {
     public int deleteHolidays(String countryCode, int year) {
         return holidayJpaRepository.deleteByCountryCodeAndYear(countryCode, year);
     }
+
+    @Override
+    public void deleteHolidays(int year) {
+        holidayJpaRepository.deleteByYear(year);
+    }
 }

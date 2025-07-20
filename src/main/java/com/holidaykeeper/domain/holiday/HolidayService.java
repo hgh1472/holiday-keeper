@@ -41,4 +41,9 @@ public class HolidayService {
         int deletedHolidays = holidayRepository.deleteHolidays(command.countryCode(), command.year());
         return new DeleteInfo(command.countryCode(), command.year(),deletedHolidays);
     }
+
+    @Transactional
+    public void deleteHolidaysOf(int year) {
+        holidayRepository.deleteHolidays(year);
+    }
 }
