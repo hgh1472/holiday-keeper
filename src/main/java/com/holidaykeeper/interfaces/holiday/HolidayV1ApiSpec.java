@@ -24,4 +24,10 @@ public interface HolidayV1ApiSpec {
             description = "특정 연도 및 국가 데이터를 재호출하여 덮어씌웁니다."
     )
     ApiResponse<HolidayV1Dto.RefreshResponse> refreshHolidays(int year, String countryCode);
+
+    @Operation(
+            summary = "공휴일 삭제",
+            description = "특정 연도 및 국가의 공휴일 레코드를 삭제합니다."
+    )
+    ApiResponse<HolidayV1Dto.DeleteResponse> deleteHolidays(int year, String countryCode);
 }

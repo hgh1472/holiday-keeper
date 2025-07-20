@@ -10,4 +10,6 @@ public interface HolidayRepository {
     Page<Holiday> findPage(String countryCode, int year, int page, int size, HolidaySort holidaySort);
 
     List<Holiday> findByCountryCodeAndYear(String countryCode, int year);
+
+    int deleteHolidays(String countryCode, int year);
 }

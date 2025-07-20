@@ -1,6 +1,5 @@
 package com.holidaykeeper.interfaces;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -307,6 +306,30 @@ public class HolidayV1ApiE2ETest {
 
                 assertAll(
                         () -> assertTrue(response.getStatusCode().is4xxClientError())
+                );
+            }
+        }
+
+        @Nested
+        @DisplayName("DELETE /api/v1/holidays/{year}/{countryCode}")
+        class Delete {
+            @DisplayName("특정 연도 및 국가의 공휴일 레코드를 삭제한다.")
+            @Test
+            void deleteHolidays() {
+                holidayJpaRepository.save(new Holiday(LocalDate.of(2025, 1, 1), "새해", "New Year's Day", "KR"));
+                holidayJpaRepository.save(new Holiday(LocalDate.of(2025, 12, 25), "성탄절", "Christmas", "KR"));
+
+                ParameterizedTypeReference<ApiResponse<HolidayV1Dto.DeleteResponse>> responseType = new ParameterizedTypeReference<>() {
+                };
+                String url = REQUEST_URL + "/2025/KR";
+                ResponseEntity<ApiResponse<HolidayV1Dto.DeleteResponse>> response =
+                        testRestTemplate.exchange(url, HttpMethod.DELETE, new HttpEntity<>(null), responseType);
+
+                assertAll(
+                        () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                        () -> assertThat(response.getBody().data().countryCode()).isEqualTo("KR"),
+                        () -> assertThat(response.getBody().data().year()).isEqualTo(2025),
+                        () -> assertThat(response.getBody().data().deletedCount()).isEqualTo(2)
                 );
             }
         }

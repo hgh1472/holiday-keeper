@@ -35,4 +35,10 @@ public class HolidayService {
                         holiday.getCountryCode()))
                 .toList();
     }
+
+    @Transactional
+    public DeleteInfo deleteHolidays(String countryCode, int year) {
+        int deletedHolidays = holidayRepository.deleteHolidays(countryCode, year);
+        return new DeleteInfo(countryCode, year, deletedHolidays);
+    }
 }

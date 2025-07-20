@@ -1,8 +1,9 @@
 package com.holidaykeeper.domain.holiday;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.holidaykeeper.domain.holiday.HolidayCommand.Find;
@@ -58,5 +59,20 @@ class HolidayServiceTest {
         assertThat(holidays).hasSize(2);
         assertThat(holidays)
                 .allMatch(holiday -> holiday.countryCode().equals("KR") && holiday.date().getYear() == 2025);
+    }
+
+    @DisplayName("특정 연도 및 국가의 공휴일 레코드를 삭제한다.")
+    @Test
+    void deleteHolidays() {
+        when(holidayRepository.deleteHolidays("KR", 2025)).thenReturn(2);
+
+        DeleteInfo deleteInfo = holidayService.deleteHolidays("KR", 2025);
+
+        verify(holidayRepository, times(1)).deleteHolidays("KR", 2025);
+        assertAll(
+                () -> assertThat(deleteInfo.countryCode()).isEqualTo("KR"),
+                () -> assertThat(deleteInfo.year()).isEqualTo(2025),
+                () -> assertThat(deleteInfo.deletedCount()).isEqualTo(2)
+        );
     }
 }

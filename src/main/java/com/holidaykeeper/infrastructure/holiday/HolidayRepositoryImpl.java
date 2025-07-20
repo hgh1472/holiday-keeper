@@ -47,4 +47,9 @@ public class HolidayRepositoryImpl implements HolidayRepository {
     public List<Holiday> findByCountryCodeAndYear(String countryCode, int year) {
         return holidayJpaRepository.findByCountryCodeAndYear(countryCode, year);
     }
+
+    @Override
+    public int deleteHolidays(String countryCode, int year) {
+        return holidayJpaRepository.deleteByCountryCodeAndYear(countryCode, year);
+    }
 }

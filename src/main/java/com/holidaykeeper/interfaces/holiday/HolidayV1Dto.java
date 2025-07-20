@@ -38,4 +38,11 @@ public class HolidayV1Dto {
             List<HolidayResponse> refreshedHolidays
     ) {
     }
+
+    public record DeleteResponse(
+            String countryCode,
+            int year,
+            int deletedCount
+    ) {
+    }
 }

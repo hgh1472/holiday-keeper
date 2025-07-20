@@ -2,15 +2,18 @@ package com.holidaykeeper.interfaces.holiday;
 
 import com.holidaykeeper.application.holiday.HolidayFacade;
 import com.holidaykeeper.application.holiday.LoadResult;
+import com.holidaykeeper.domain.holiday.DeleteInfo;
 import com.holidaykeeper.domain.holiday.HolidayClient;
 import com.holidaykeeper.domain.holiday.HolidayCommand.Search;
 import com.holidaykeeper.domain.holiday.HolidayCommand.Search.HolidaySort;
 import com.holidaykeeper.domain.holiday.HolidayInfo;
 import com.holidaykeeper.domain.holiday.HolidayService;
 import com.holidaykeeper.interfaces.ApiResponse;
+import com.holidaykeeper.interfaces.holiday.HolidayV1Dto.DeleteResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,8 +29,6 @@ public class HolidayV1Controller implements HolidayV1ApiSpec {
     private final HolidayFacade holidayFacade;
 
     private final HolidayService holidayService;
-
-    private final HolidayClient holidayClient;
 
     @Override
     @PostMapping
@@ -69,6 +70,13 @@ public class HolidayV1Controller implements HolidayV1ApiSpec {
                 holidays.stream()
                         .map(holiday -> new HolidayV1Dto.HolidayResponse(holiday.name(), holiday.localName(), holiday.date()))
                         .toList()));
+    }
+
+    @Override
+    @DeleteMapping("/{year}/{countryCode}")
+    public ApiResponse<HolidayV1Dto.DeleteResponse> deleteHolidays(@PathVariable int year, @PathVariable String countryCode) {
+        DeleteInfo deleteInfo = holidayService.deleteHolidays(countryCode, year);
+        return ApiResponse.success(new DeleteResponse(deleteInfo.countryCode(), deleteInfo.year(), deleteInfo.deletedCount()));
     }
 
 }
